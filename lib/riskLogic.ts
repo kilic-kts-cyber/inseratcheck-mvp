@@ -70,12 +70,6 @@ export function calculateRisk(data: FormData): RiskResult {
     questions.push(
       'Welche Teile wurden instand gesetzt und liegt ein Gutachten vor?'
     );
-  } else if (data.accidentFree === 'unklar') {
-  score += 1;
-  hints.push('Unfallfreiheit nicht eindeutig – Lackprüfung empfohlen.');
-}
-    );
-  }
 
   // Servicehistorie
   if (data.serviceHistory === 'nein') {
@@ -157,11 +151,6 @@ export function calculateRisk(data: FormData): RiskResult {
   }
 
   // Händler-spezifisch
-  if (data.sellerType === 'haendler') {
-    questions.push(
-      'Welche gesetzliche Gewährleistung wird gewährt?'
-    );
-  }
 
   // Score → Level
   const level: RiskLevel =
