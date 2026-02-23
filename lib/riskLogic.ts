@@ -71,10 +71,9 @@ export function calculateRisk(data: FormData): RiskResult {
       'Welche Teile wurden instand gesetzt und liegt ein Gutachten vor?'
     );
   } else if (data.accidentFree === 'unklar') {
-    score += 1;
-    hints.push('Unfallfreiheit nicht eindeutig – Lackprüfung empfohlen.');
-    questions.push(
-      'Ist das Fahrzeug nach Ihrer Kenntnis unfallfrei?'
+  score += 1;
+  hints.push('Unfallfreiheit nicht eindeutig – Lackprüfung empfohlen.');
+}
     );
   }
 
