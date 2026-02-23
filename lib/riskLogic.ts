@@ -243,8 +243,8 @@ export function calculateRisk(data: FormData): RiskResult {
   return {
     score:     Math.min(score, 10),
     level,
-    hints:     [...new Set(hints)].slice(0, 7),
-    questions: [...new Set(questions)].slice(0, 8),
+    hints:     Array.from(new Set(hints)).slince(0,7)
+    questions: Array.from(new Set(questions)).slince(0,8),
   };
 }
 
