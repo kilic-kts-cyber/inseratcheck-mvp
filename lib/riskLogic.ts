@@ -37,7 +37,7 @@ const BASE_QUESTIONS: string[] = [
   'Könnten Sie mir die vollständige FIN / VIN mitteilen?',
   'Wann wurde der letzte größere Service durchgeführt?',
   'Wie ist die Gewährleistung geregelt?',
-  'Wurde der Zahnriemen geprüft oder ersetzt?',
+  'Wurde der Zahnriemen oder – falls vorhanden – die Steuerkette geprüft bzw. erneuert?',
 ];
 
 // ─── Hauptfunktion ─────────────────────────────────────────────
