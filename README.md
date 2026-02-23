@@ -32,3 +32,4 @@ export const WORKSHOP_BOOKING_URL = 'https://deine-buchungsseite.de';
 - Tailwind CSS
 - jsPDF (client-side, kein Backend)
 - State via URL-Query-Parameter
+# rebuild
