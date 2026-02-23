@@ -27,6 +27,7 @@ export const WORKSHOP_BOOKING_URL = 'https://deine-buchungsseite.de';
 | `/result` | Ergebnisseite (State via URL) |
 
 ## Stack
+# rebuild 2
 
 - Next.js 14 App Router + TypeScript
 - Tailwind CSS
