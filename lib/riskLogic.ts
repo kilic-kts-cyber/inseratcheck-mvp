@@ -34,10 +34,11 @@ export interface RiskResult {
 // ─── Basis-Fragen ─────────────────────────────────────────────
 
 const BASE_QUESTIONS: string[] = [
-  'Könnten Sie mir die vollständige FIN / VIN mitteilen?',
-  'Wann wurde der letzte größere Service durchgeführt?',
-  'Wie ist die Gewährleistung geregelt?',
-  'Wurde der Zahnriemen oder – falls vorhanden – die Steuerkette geprüft bzw. erneuert?',
+ 'Können Sie mir die FIN bzw. VIN mitteilen?',
+'Wann wurde der letzte größere Service durchgeführt?',
+'Wurde der Zahnriemen oder – falls vorhanden – die Steuerkette geprüft bzw. erneuert?',
+'Ist das Fahrzeug unfallfrei?',
+'Welche gesetzliche Gewährleistung oder Händlergarantie wird gewährt?',
 ];
 
 // ─── Hauptfunktion ─────────────────────────────────────────────
