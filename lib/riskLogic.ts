@@ -5,6 +5,7 @@ export type RiskLevel = 'Niedrig' | 'Erhöht' | 'Hoch';
 
 export interface FormData {
   advertLink: string;
+  advertText?: string;   // ← NEU (Freitextanalyse)
   brand: string;
   model: string;
   year: string;
@@ -22,14 +23,14 @@ export interface FormData {
 }
 
 export interface RiskResult {
-  score: number;          // 0–100
+  score: number;
   level: RiskLevel;
-  hints: string[];        // Befunde & Hinweise
-  questions: string[];    // Verhandlungsfragen
+  hints: string[];
+  questions: string[];
 }
 
 // ─────────────────────────────────────────────
-// Basisfragen (immer)
+// Basisfragen
 // ─────────────────────────────────────────────
 const BASE_QUESTIONS: string[] = [
   'Können Sie mir bitte die FIN bzw. VIN mitteilen, damit ich das Fahrzeugdatenblatt prüfen kann?',
@@ -42,16 +43,17 @@ const BASE_QUESTIONS: string[] = [
 // Hauptfunktion
 // ─────────────────────────────────────────────
 export function calculateRisk(data: FormData): RiskResult {
+
   let score = 0;
   const hints: string[] = [];
   const questions: string[] = [...BASE_QUESTIONS];
 
-  // Händler: Gewährleistung + Garantie (nur Händler)
+  // Händler
   if (data.sellerType === 'haendler') {
     questions.push('Welche gesetzliche Gewährleistung wird gewährt und besteht zusätzlich eine Händlergarantie?');
   }
 
-  // Besitzdauer (nur Privat)
+  // Besitzdauer
   if (data.sellerType === 'privat') {
     if (data.ownershipDuration === '<3') {
       score += 10;
@@ -60,19 +62,17 @@ export function calculateRisk(data: FormData): RiskResult {
     } else if (data.ownershipDuration === 'unklar') {
       score += 5;
       hints.push('Besitzdauer nicht eindeutig – bitte nachfragen.');
-      questions.push('Wie lange besitzen Sie das Fahrzeug bereits?');
     }
   }
 
   // Unfall
   if (data.accidentFree === 'nein') {
     score += 20;
-    hints.push('Unfall dokumentiert – Reparaturumfang und Gutachten sorgfältig prüfen.');
+    hints.push('Unfall dokumentiert – Reparaturumfang und Gutachten prüfen.');
     questions.push('Welche Teile wurden instand gesetzt und liegt ein Gutachten/Reparaturnachweis vor?');
   } else if (data.accidentFree === 'unklar') {
     score += 8;
     hints.push('Unfallstatus nicht eindeutig – unabhängige Prüfung empfohlen.');
-    // KEINE Zusatzfrage hier, damit es nicht doppelt wirkt
   }
 
   // Service
@@ -85,7 +85,7 @@ export function calculateRisk(data: FormData): RiskResult {
     hints.push('Servicehistorie nicht eindeutig dokumentiert – Nachweise prüfen.');
   }
 
-  // HU / TÜV
+  // HU
   const huDate = parseHuDate(data.huValidUntil);
   if (!huDate) {
     score += 5;
@@ -103,7 +103,7 @@ export function calculateRisk(data: FormData): RiskResult {
     }
   }
 
-  // Erstauslieferung / Import
+  // Import
   if (data.firstRegistration === 'non-eu') {
     score += 20;
     hints.push('Nicht-EU-Import – Dokumentation und technische Spezifikationen prüfen.');
@@ -137,16 +137,37 @@ export function calculateRisk(data: FormData): RiskResult {
     }
   }
 
+  // ─────────────────────────────────────────────
+  // 🔥 FREITEXT-TRIGGER
+  // ─────────────────────────────────────────────
+  if (data.advertText) {
+    const text = data.advertText.toLowerCase();
+
+    const triggers = [
+      { regex: /kundenauftrag/, score: 12, hint: 'Formulierung „im Kundenauftrag“ gefunden – Gewährleistung prüfen.' },
+      { regex: /keine garantie|ohne garantie/, score: 10, hint: 'Hinweis auf fehlende Garantie im Inserat.' },
+      { regex: /nur export|export/, score: 15, hint: 'Fahrzeug offenbar nur für Export vorgesehen.' },
+      { regex: /bastlerfahrzeug/, score: 20, hint: 'Fahrzeug als Bastlerfahrzeug bezeichnet – hoher Reparaturbedarf möglich.' },
+      { regex: /nur gewerbe/, score: 12, hint: 'Verkauf offenbar nur an Gewerbetreibende.' },
+      { regex: /unfallfahrzeug/, score: 20, hint: 'Inserat weist Fahrzeug als Unfallfahrzeug aus.' },
+    ];
+
+    triggers.forEach(t => {
+      if (t.regex.test(text)) {
+        score += t.score;
+        hints.push(t.hint);
+      }
+    });
+  }
+
   // Score begrenzen
   score = Math.min(score, 100);
 
-  // Level-Schwellen (kannst du später feinjustieren)
   const level: RiskLevel =
     score < 25 ? 'Niedrig' :
     score < 60 ? 'Erhöht' :
     'Hoch';
 
-  // Mindesthinweis, falls sehr wenig erkannt wurde
   if (hints.length === 0) {
     hints.push('Keine auffälligen Punkte erkannt – Dokumente und Probefahrt dennoch empfehlenswert.');
   }
@@ -166,11 +187,9 @@ function parseHuDate(val: string): Date | null {
   if (!val || /unklar/i.test(val)) return null;
   const s = val.trim();
 
-  // MM/YYYY oder M/YYYY
   const m1 = s.match(/^(\d{1,2})[./](\d{4})$/);
   if (m1) return new Date(+m1[2], +m1[1] - 1, 1);
 
-  // YYYY-MM
   const m2 = s.match(/^(\d{4})-(\d{1,2})$/);
   if (m2) return new Date(+m2[1], +m2[2] - 1, 1);
 
