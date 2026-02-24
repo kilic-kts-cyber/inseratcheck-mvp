@@ -18,13 +18,16 @@ const RISK_CFG: Record<RiskLevel, {
 
 // ─── Score-Balken ─────────────────────────────────────────────
 function ScoreBar({ score, level }: { score: number; level: RiskLevel }) {
-  const pct   = Math.min(100, Math.round((score / 10) * 100));
-  const color = level === 'Niedrig' ? 'bg-emerald-500' : level === 'Erhöht' ? 'bg-amber-500' : 'bg-red-500';
+  const pct   = Math.min(100, Math.round((score / 100) * 100));
+  const color =
+    score < 30 ? 'bg-emerald-500' :
+    score < 50 ? 'bg-amber-500' :
+                 'bg-red-500';
   return (
     <div>
       <div className="flex justify-between text-xs text-gray-400 mb-1.5">
         <span>Risikoscore</span>
-        <span className="font-semibold text-gray-600">{score} / 10</span>
+        <span className="font-semibold text-gray-600">{score} / 100</span>
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width:`${pct}%` }} />
