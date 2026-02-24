@@ -7,9 +7,9 @@ import { calculateRisk, type FormData, type RiskLevel } from '@/lib/riskLogic';
 import { generatePDF } from '@/lib/pdf';
 import WorkshopCTA from '@/components/WorkshopCTA';
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Risiko-Config
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 const RISK_CFG: Record<RiskLevel, {
   bg: string; border: string; text: string; badgeBg: string; emoji: string; pulse: boolean;
 }> = {
@@ -18,9 +18,9 @@ const RISK_CFG: Record<RiskLevel, {
   Hoch:    { bg:'bg-red-50',     border:'border-red-200',     text:'text-red-700',     badgeBg:'bg-red-100',     emoji:'🚨', pulse:true  },
 };
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Score-Bar (0–100)
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 function ScoreBar({ score }: { score: number }) {
   const pct = Math.min(100, score);
 
@@ -45,9 +45,9 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Hauptkomponente
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 export default function ResultClient() {
 
   const params = useSearchParams();
@@ -70,12 +70,55 @@ export default function ResultClient() {
     ownershipDuration:  (params.get('ownershipDuration') as FormData['ownershipDuration']) ?? '',
   }), [params]);
 
-  const result = useMemo(() => calculateRisk(data), [data]);
-  const cfg    = RISK_CFG[result.level];
+  const baseResult = useMemo(() => calculateRisk(data), [data]);
 
-  // ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // KI STATE
+  // ─────────────────────────────────────────
+  const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<any>(null);
+
+  async function handleAiAnalyze() {
+    if (!aiText || aiText.length < 20) return;
+
+    setAiLoading(true);
+    setAiResult(null);
+
+    try {
+      const res = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: aiText })
+      });
+
+      const data = await res.json();
+      setAiResult(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // FINAL SCORE (inkl. KI)
+  // ─────────────────────────────────────────
+  const finalScore = Math.min(
+    100,
+    baseResult.score + (aiResult?.riskBoost || 0)
+  );
+
+  const finalLevel: RiskLevel =
+    finalScore < 25 ? 'Niedrig' :
+    finalScore < 60 ? 'Erhöht' :
+    'Hoch';
+
+  const cfg = RISK_CFG[finalLevel];
+
+  // ─────────────────────────────────────────
   // Copy-Paste Verkäufer-Text
-  // ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────
   const emailTemplate = useMemo(() => {
 
     const vehicleName = [data.brand, data.model, data.year]
@@ -92,7 +135,7 @@ export default function ResultClient() {
 
     const idLine = advertId ? `Inseratsnummer: ${advertId}\n\n` : '';
 
-    const questionsBlock = result.questions.map(q => `- ${q}`).join('\n');
+    const questionsBlock = baseResult.questions.map(q => `- ${q}`).join('\n');
 
     return `Guten Tag,
 
@@ -104,14 +147,18 @@ Ich freue mich auf Ihre Rückmeldung.
 
 Mit freundlichen Grüßen`;
 
-  }, [result.questions, data]);
+  }, [baseResult.questions, data]);
 
   const [pdfLoading, setPdfLoading] = useState(false);
 
   async function handlePdf() {
     setPdfLoading(true);
     try {
-      await generatePDF(data, result);
+      await generatePDF(data, {
+        ...baseResult,
+        score: finalScore,
+        level: finalLevel
+      });
     } finally {
       setPdfLoading(false);
     }
@@ -124,7 +171,6 @@ Mit freundlichen Grüßen`;
 
       <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
 
-        {/* Fahrzeug */}
         <div>
           <h1 className="text-2xl font-bold">{vehicle || 'Ihr Fahrzeug'}</h1>
         </div>
@@ -137,18 +183,47 @@ Mit freundlichen Grüßen`;
             </div>
             <div>
               <p className="text-sm text-gray-400">Risikoklasse</p>
-              <p className={`text-xl font-bold ${cfg.text}`}>{result.level}</p>
+              <p className={`text-xl font-bold ${cfg.text}`}>{finalLevel}</p>
             </div>
           </div>
 
-          <ScoreBar score={result.score} />
+          <ScoreBar score={finalScore} />
         </div>
+
+        {/* KI Analyse */}
+        <section className="bg-white rounded-xl border p-4">
+          <h2 className="font-semibold mb-3">🧠 KI-Inserat-Analyse</h2>
+
+          <textarea
+            placeholder="Hier kompletten Inseratstext einfügen…"
+            className="w-full border rounded-lg p-3 text-sm mb-3"
+            rows={5}
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+          />
+
+          <button
+            onClick={handleAiAnalyze}
+            disabled={aiLoading}
+            className="w-full bg-purple-600 text-white py-2 rounded-lg"
+          >
+            {aiLoading ? 'Analysiere…' : 'Mit KI analysieren'}
+          </button>
+
+          {aiResult && (
+            <div className="mt-4 bg-gray-50 p-3 rounded-lg text-sm space-y-2">
+              <p><strong>Risikoboost:</strong> +{aiResult.riskBoost}</p>
+              <p><strong>Schweregrad:</strong> {aiResult.severity}</p>
+              <p><strong>Zusammenfassung:</strong> {aiResult.summary}</p>
+            </div>
+          )}
+        </section>
 
         {/* Hinweise */}
         <section className="bg-white rounded-xl border p-4">
           <h2 className="font-semibold mb-3">Befunde & Hinweise</h2>
           <ul className="space-y-2 text-sm text-gray-700">
-            {result.hints.map((hint, i) => (
+            {baseResult.hints.map((hint, i) => (
               <li key={i}>• {hint}</li>
             ))}
           </ul>
@@ -158,7 +233,7 @@ Mit freundlichen Grüßen`;
         <section className="bg-white rounded-xl border p-4">
           <h2 className="font-semibold mb-3">Ihre Verhandlungsfragen</h2>
           <ul className="space-y-2 text-sm text-gray-600">
-            {result.questions.map((q, i) => (
+            {baseResult.questions.map((q, i) => (
               <li key={i}>„{q}"</li>
             ))}
           </ul>
