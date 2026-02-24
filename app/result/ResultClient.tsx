@@ -44,9 +44,7 @@ export default function ResultClient() {
 
   const data = useMemo<FormData>(() => ({
     advertLink: params.get('advertLink') ?? '',
-    advertText: typeof window !== 'undefined'
-      ? localStorage.getItem("advertText") || ""
-      : "",
+    advertText: params.get('advertText') ?? '',
     brand: params.get('brand') ?? '',
     model: params.get('model') ?? '',
     year: params.get('year') ?? '',
