@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { calculateRisk, type FormData, type RiskLevel } from '@/lib/riskLogic';
 import { generatePDF } from '@/lib/pdf';
 import WorkshopCTA from '@/components/WorkshopCTA';
@@ -44,6 +44,9 @@ export default function ResultClient() {
 
   const data = useMemo<FormData>(() => ({
     advertLink: params.get('advertLink') ?? '',
+    advertText: typeof window !== 'undefined'
+      ? localStorage.getItem("advertText") || ""
+      : "",
     brand: params.get('brand') ?? '',
     model: params.get('model') ?? '',
     year: params.get('year') ?? '',
@@ -62,47 +65,7 @@ export default function ResultClient() {
 
   const baseResult = useMemo(() => calculateRisk(data), [data]);
 
-  const [aiBoost, setAiBoost] = useState(0);
-
-  useEffect(() => {
-    const text = localStorage.getItem("advertText") || "";
-    if (!text || text.length < 20) return;
-
-    async function runAI() {
-      try {
-        const res = await fetch('/api/ai/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
-
-        if (!res.ok) return;
-
-        const result = await res.json();
-        let boost = result?.riskBoost || 0;
-
-        const lower = text.toLowerCase();
-
-        if (
-          lower.includes("springt nicht an") ||
-          lower.includes("ausgegangen") ||
-          lower.includes("motorschaden") ||
-          lower.includes("motor defekt")
-        ) {
-          boost = Math.max(boost, 40);
-        }
-
-        setAiBoost(boost);
-
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    runAI();
-  }, []);
-
-  const finalScore = Math.min(100, baseResult.score + aiBoost);
+  const finalScore = baseResult.score;
 
   const finalLevel: RiskLevel =
     finalScore < 25 ? 'Niedrig' :
@@ -147,6 +110,26 @@ export default function ResultClient() {
 
           <ScoreBar score={finalScore} />
         </div>
+
+        {/* Hinweise */}
+        <section className="bg-white rounded-xl border p-4">
+          <h2 className="font-semibold mb-3">Befunde & Hinweise</h2>
+          <ul className="space-y-2 text-sm text-gray-700">
+            {baseResult.hints.map((hint, i) => (
+              <li key={i}>• {hint}</li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Fragen */}
+        <section className="bg-white rounded-xl border p-4">
+          <h2 className="font-semibold mb-3">Ihre Verhandlungsfragen</h2>
+          <ul className="space-y-2 text-sm text-gray-600">
+            {baseResult.questions.map((q, i) => (
+              <li key={i}>„{q}"</li>
+            ))}
+          </ul>
+        </section>
 
         <button
           onClick={handlePdf}
