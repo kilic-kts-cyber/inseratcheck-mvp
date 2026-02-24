@@ -4,7 +4,6 @@ import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { calculateRisk, type FormData, type RiskLevel } from '@/lib/riskLogic';
 import { generatePDF } from '@/lib/pdf';
-import WorkshopCTA from '@/components/WorkshopCTA';
 
 const RISK_CFG: Record<RiskLevel, {
   bg: string; border: string; text: string; badgeBg: string; emoji: string;
@@ -14,41 +13,13 @@ const RISK_CFG: Record<RiskLevel, {
   Hoch:    { bg:'bg-red-50',     border:'border-red-200',     text:'text-red-700',     badgeBg:'bg-red-100',     emoji:'🚨' },
 };
 
-function ScoreBar({ score }: { score: number }) {
-  const pct = Math.min(100, score);
-  const color =
-    score < 30 ? 'bg-emerald-500' :
-    score < 60 ? 'bg-amber-500' :
-                 'bg-red-500';
-
-  return (
-    <div>
-      <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-        <span>Risikoscore</span>
-        <span className="font-semibold text-gray-600">{score} / 100</span>
-      </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-700 ${color}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function ResultClient() {
 
   const params = useSearchParams();
 
-  const advertText =
-    typeof window !== 'undefined'
-      ? (localStorage.getItem('advertText') || '')
-      : '';
-
   const data = useMemo<FormData>(() => ({
     advertLink: params.get('advertLink') ?? '',
-    advertText,
+    advertText: params.get('advertText') ?? '',
     brand: params.get('brand') ?? '',
     model: params.get('model') ?? '',
     year: params.get('year') ?? '',
@@ -63,46 +34,53 @@ export default function ResultClient() {
     repaintsDocumented: (params.get('repaintsDocumented') as any) ?? '',
     huValidUntil: params.get('huValidUntil') ?? '',
     ownershipDuration: (params.get('ownershipDuration') as any) ?? '',
-  }), [params, advertText]);
+  }), [params]);
 
-  const baseResult = useMemo(() => calculateRisk(data), [data]);
+  const result = useMemo(() => calculateRisk(data), [data]);
+  const cfg = RISK_CFG[result.level];
 
-  const finalScore = baseResult.score;
+  const vehicle = [data.brand, data.model, data.year].filter(Boolean).join(' ');
 
-  const finalLevel: RiskLevel =
-    finalScore < 25 ? 'Niedrig' :
-    finalScore < 60 ? 'Erhöht' :
-    'Hoch';
+  // 🔹 Händler-Mustertext
+  const emailTemplate = useMemo(() => {
 
-  const cfg = RISK_CFG[finalLevel];
+    const questionsBlock = result.questions
+      .map(q => `- ${q}`)
+      .join('\n');
+
+    return `Guten Tag,
+
+ich interessiere mich für Ihr Fahrzeug (${vehicle}).
+
+Vor einer Besichtigung hätte ich noch folgende Fragen:
+
+${questionsBlock}
+
+Vielen Dank im Voraus.
+
+Mit freundlichen Grüßen`;
+
+  }, [result.questions, vehicle]);
 
   const [pdfLoading, setPdfLoading] = useState(false);
 
   async function handlePdf() {
-    if (pdfLoading) return;
     setPdfLoading(true);
     try {
-      await generatePDF(data, {
-        ...baseResult,
-        score: finalScore,
-        level: finalLevel
-      });
-    } catch (e) {
-      console.error(e);
-      alert('PDF konnte nicht erstellt werden. Bitte erneut versuchen.');
+      await generatePDF(data, result);
     } finally {
       setPdfLoading(false);
     }
   }
 
-  const vehicle = [data.brand, data.model, data.year].filter(Boolean).join(' ');
-
   return (
-    <main className="min-h-screen bg-[#f7f9f8]">
+    <main className="min-h-screen bg-[#f7f9f8] pb-20">
+
       <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
 
         <h1 className="text-2xl font-bold">{vehicle || 'Ihr Fahrzeug'}</h1>
 
+        {/* Risikoklasse */}
         <div className={`${cfg.bg} ${cfg.border} border-2 rounded-xl p-6`}>
           <div className="flex items-center gap-3 mb-4">
             <div className={`${cfg.badgeBg} w-12 h-12 rounded-xl flex items-center justify-center text-2xl`}>
@@ -110,42 +88,55 @@ export default function ResultClient() {
             </div>
             <div>
               <p className="text-sm text-gray-400">Risikoklasse</p>
-              <p className={`text-xl font-bold ${cfg.text}`}>{finalLevel}</p>
+              <p className={`text-xl font-bold ${cfg.text}`}>{result.level}</p>
             </div>
           </div>
-
-          <ScoreBar score={finalScore} />
+          <p className="text-sm text-gray-600">
+            Risikoscore: {result.score} / 100
+          </p>
         </div>
 
+        {/* Hinweise */}
         <section className="bg-white rounded-xl border p-4">
           <h2 className="font-semibold mb-3">Befunde & Hinweise</h2>
           <ul className="space-y-2 text-sm text-gray-700">
-            {baseResult.hints.map((hint, i) => (
+            {result.hints.map((hint, i) => (
               <li key={i}>• {hint}</li>
             ))}
           </ul>
         </section>
 
+        {/* Verhandlungsfragen */}
         <section className="bg-white rounded-xl border p-4">
           <h2 className="font-semibold mb-3">Ihre Verhandlungsfragen</h2>
           <ul className="space-y-2 text-sm text-gray-600">
-            {baseResult.questions.map((q, i) => (
-              <li key={i}>„{q}"</li>
+            {result.questions.map((q, i) => (
+              <li key={i}>„{q}“</li>
             ))}
           </ul>
         </section>
 
+        {/* Copy-Block */}
+        <section className="bg-gray-50 rounded-xl border p-4">
+          <h2 className="font-semibold mb-3">📩 Anfrage direkt kopieren</h2>
+          <textarea
+            readOnly
+            value={emailTemplate}
+            className="w-full h-64 text-sm p-3 border rounded-lg bg-white"
+          />
+        </section>
+
+        {/* PDF Button */}
         <button
           onClick={handlePdf}
           disabled={pdfLoading}
-          className={`w-full text-white py-3 rounded-lg ${pdfLoading ? 'bg-gray-700' : 'bg-black'}`}
+          className="w-full bg-black text-white py-4 rounded-xl font-semibold"
         >
           {pdfLoading ? 'PDF wird erstellt…' : 'Analyse als PDF speichern'}
         </button>
 
       </div>
 
-      <WorkshopCTA />
     </main>
   );
 }
