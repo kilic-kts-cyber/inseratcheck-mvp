@@ -65,7 +65,7 @@ export default function ResultClient() {
   const [aiBoost, setAiBoost] = useState(0);
 
   useEffect(() => {
-    const text = localStorage.getItem("advertText");
+    const text = localStorage.getItem("advertText") || "";
     if (!text || text.length < 20) return;
 
     async function runAI() {
