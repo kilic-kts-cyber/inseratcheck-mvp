@@ -59,9 +59,31 @@ export default function ResultClient() {
   }), [params]);
 
   const result = useMemo(() => calculateRisk(data), [data]);
-  const cfg    = RISK_CFG[result.level];
+const cfg    = RISK_CFG[result.level];
 
-  const [pdfLoading, setPdfLoading] = useState(false);
+const emailTemplate = useMemo(() => {
+  const vehicleName = [data.brand, data.model, data.year]
+    .filter(Boolean)
+    .join(' ');
+
+  const idMatch = data.advertLink?.match(/id=(\d+)/);
+  const advertId = idMatch ? idMatch[1] : null;
+
+  const greeting = 'Guten Tag,';
+
+  const intro =
+    vehicleName
+      ? `bezüglich Ihres angebotenen Fahrzeugs (${vehicleName}) hätte ich vor einer Besichtigung noch einige Fragen:`
+      : 'bezüglich des angebotenen Fahrzeugs hätte ich vor einer Besichtigung noch einige Fragen:';
+
+  const idLine = advertId ? `Inseratsnummer: ${advertId}` : '';
+
+  const questionsBlock = result.questions.map((q) => `- ${q}`).join('\n');
+
+  return `${greeting}\n\n${intro}\n${idLine}\n\n${questionsBlock}\n\nIch freue mich auf Ihre Rückmeldung.\nMit freundlichen Grüßen`;
+}, [result.questions, data]);
+
+const [pdfLoading, setPdfLoading] = useState(false);
   const [sendEmail,  setSendEmail]  = useState(false);
   const [email,      setEmail]      = useState('');
 
