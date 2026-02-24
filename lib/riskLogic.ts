@@ -30,7 +30,7 @@ export interface RiskResult {
 
 const BASE_QUESTIONS = [
   'Können Sie mir bitte die FIN/VIN mitteilen?',
-  'Wann war der letzte größere Service?',
+  'Wann wurde der letzte größere Service durchgeführt?',
   'Wurde Zahnriemen oder Steuerkette erneuert?',
   'Ist das Fahrzeug unfallfrei?',
 ];
@@ -42,9 +42,8 @@ export function calculateRisk(data: FormData): RiskResult {
   const questions: string[] = [...BASE_QUESTIONS];
 
   const km = parseNum(data.mileage);
-  const yr = parseInt(data.year, 10);
 
-  // 🔥 EXTREME KILOMETER
+  // 🔴 EXTREME KILOMETER
   if (km > 400000) {
     score += 40;
     hints.push('Extrem hohe Laufleistung – wirtschaftliches Risiko sehr hoch.');
@@ -52,41 +51,39 @@ export function calculateRisk(data: FormData): RiskResult {
 
   if (km > 1000000) {
     score = 100;
-    hints.push('Kilometerstand unrealistisch hoch – Eingabefehler oder Manipulation möglich.');
+    hints.push('Kilometerstand unrealistisch hoch – möglicher Eingabefehler oder Manipulation.');
   }
 
-  // Unfall
-  if (data.accidentFree === 'nein') {
-    score += 20;
-    hints.push('Unfall dokumentiert.');
-  }
-
-  // Keine Servicehistorie
-  if (data.serviceHistory === 'nein') {
-    score += 15;
-    hints.push('Keine Servicehistorie vorhanden.');
-  }
-
-  // 🔥 FREITEXT – HARTE MOTORTRIGGER
+  // 🔥 KONKRETE FREITEXT-ANALYSE
   if (data.advertText) {
 
     const text = data.advertText.toLowerCase();
 
-    if (
-      text.includes('springt nicht an') ||
-      text.includes('nicht fahrbereit') ||
-      text.includes('ausgegangen') ||
-      text.includes('motorschaden') ||
-      text.includes('motor defekt') ||
-      text.includes('getriebeschaden')
-    ) {
+    if (text.includes('springt nicht an')) {
       score += 50;
-      hints.push('Schwerer technischer Defekt im Inserat erwähnt.');
+      hints.push('Motorproblem erwähnt („springt nicht an“). Fahrzeug aktuell nicht fahrbereit.');
+      questions.push('Warum springt das Fahrzeug nicht an und welche Diagnose liegt vor?');
+    }
+
+    if (text.includes('ausgegangen')) {
+      score += 30;
+      hints.push('Motor während der Fahrt ausgegangen – möglicher schwerer Defekt.');
+    }
+
+    if (text.includes('motorschaden')) {
+      score += 60;
+      hints.push('Motorschaden im Inserat erwähnt.');
+      questions.push('Liegt ein Kostenvoranschlag oder Gutachten zum Motorschaden vor?');
+    }
+
+    if (text.includes('getriebeschaden')) {
+      score += 60;
+      hints.push('Getriebeschaden im Inserat erwähnt.');
     }
 
     if (text.includes('bastlerfahrzeug')) {
       score += 30;
-      hints.push('Als Bastlerfahrzeug deklariert.');
+      hints.push('Fahrzeug als Bastlerfahrzeug deklariert.');
     }
 
     if (text.includes('nur export')) {
