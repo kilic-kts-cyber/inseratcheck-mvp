@@ -28,22 +28,29 @@ export interface RiskResult {
   questions: string[];
 }
 
-const BASE_QUESTIONS = [
-  'Können Sie mir bitte die FIN/VIN mitteilen?',
-  'Wann wurde der letzte größere Service durchgeführt?',
-  'Wurde Zahnriemen oder Steuerkette erneuert?',
-  'Ist das Fahrzeug unfallfrei?',
-];
-
 export function calculateRisk(data: FormData): RiskResult {
 
   let score = 0;
   const hints: string[] = [];
-  const questions: string[] = [...BASE_QUESTIONS];
+
+  // 🔹 BASIS-FRAGEN (jetzt erweitert)
+  const questions: string[] = [
+    'Können Sie mir bitte die FIN/VIN mitteilen?',
+    'Wie viele Vorbesitzer hatte das Fahrzeug?',
+    'Ist das Fahrzeug vollständig scheckheftgepflegt?',
+    'Wann wurde der letzte größere Service durchgeführt (Datum & Kilometerstand)?',
+    'Wurde Zahnriemen oder Steuerkette erneuert?',
+    'Ist das Fahrzeug unfallfrei?',
+    'Gibt es ein aktuelles Werkstatt- oder Zustandsprotokoll?',
+  ];
+
+  if (data.sellerType === 'haendler') {
+    questions.push('Welche gesetzliche Gewährleistung oder Händlergarantie wird gewährt?');
+  }
 
   const km = parseNum(data.mileage);
 
-  // 🔴 EXTREME KILOMETER
+  // 🔴 EXTREME KM
   if (km > 400000) {
     score += 40;
     hints.push('Extrem hohe Laufleistung – wirtschaftliches Risiko sehr hoch.');
@@ -54,14 +61,14 @@ export function calculateRisk(data: FormData): RiskResult {
     hints.push('Kilometerstand unrealistisch hoch – möglicher Eingabefehler oder Manipulation.');
   }
 
-  // 🔥 KONKRETE FREITEXT-ANALYSE
+  // 🔥 FREITEXT MOTOR-DETEKTION
   if (data.advertText) {
 
     const text = data.advertText.toLowerCase();
 
     if (text.includes('springt nicht an')) {
       score += 50;
-      hints.push('Motorproblem erwähnt („springt nicht an“). Fahrzeug aktuell nicht fahrbereit.');
+      hints.push('Motorproblem konkret erwähnt („springt nicht an“). Fahrzeug nicht fahrbereit.');
       questions.push('Warum springt das Fahrzeug nicht an und welche Diagnose liegt vor?');
     }
 
@@ -100,7 +107,7 @@ export function calculateRisk(data: FormData): RiskResult {
     'Hoch';
 
   if (hints.length === 0) {
-    hints.push('Keine besonderen Auffälligkeiten erkannt.');
+    hints.push('Keine besonderen Auffälligkeiten erkannt – technische Prüfung dennoch empfohlen.');
   }
 
   return {
