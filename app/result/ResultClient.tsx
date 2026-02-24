@@ -16,7 +16,6 @@ const RISK_CFG: Record<RiskLevel, {
 
 function ScoreBar({ score }: { score: number }) {
   const pct = Math.min(100, score);
-
   const color =
     score < 30 ? 'bg-emerald-500' :
     score < 60 ? 'bg-amber-500' :
@@ -42,9 +41,14 @@ export default function ResultClient() {
 
   const params = useSearchParams();
 
+  const advertText =
+    typeof window !== 'undefined'
+      ? (localStorage.getItem('advertText') || '')
+      : '';
+
   const data = useMemo<FormData>(() => ({
     advertLink: params.get('advertLink') ?? '',
-    advertText: params.get('advertText') ?? '',
+    advertText,
     brand: params.get('brand') ?? '',
     model: params.get('model') ?? '',
     year: params.get('year') ?? '',
@@ -59,7 +63,7 @@ export default function ResultClient() {
     repaintsDocumented: (params.get('repaintsDocumented') as any) ?? '',
     huValidUntil: params.get('huValidUntil') ?? '',
     ownershipDuration: (params.get('ownershipDuration') as any) ?? '',
-  }), [params]);
+  }), [params, advertText]);
 
   const baseResult = useMemo(() => calculateRisk(data), [data]);
 
@@ -75,6 +79,7 @@ export default function ResultClient() {
   const [pdfLoading, setPdfLoading] = useState(false);
 
   async function handlePdf() {
+    if (pdfLoading) return;
     setPdfLoading(true);
     try {
       await generatePDF(data, {
@@ -82,6 +87,9 @@ export default function ResultClient() {
         score: finalScore,
         level: finalLevel
       });
+    } catch (e) {
+      console.error(e);
+      alert('PDF konnte nicht erstellt werden. Bitte erneut versuchen.');
     } finally {
       setPdfLoading(false);
     }
@@ -109,7 +117,6 @@ export default function ResultClient() {
           <ScoreBar score={finalScore} />
         </div>
 
-        {/* Hinweise */}
         <section className="bg-white rounded-xl border p-4">
           <h2 className="font-semibold mb-3">Befunde & Hinweise</h2>
           <ul className="space-y-2 text-sm text-gray-700">
@@ -119,7 +126,6 @@ export default function ResultClient() {
           </ul>
         </section>
 
-        {/* Fragen */}
         <section className="bg-white rounded-xl border p-4">
           <h2 className="font-semibold mb-3">Ihre Verhandlungsfragen</h2>
           <ul className="space-y-2 text-sm text-gray-600">
@@ -132,7 +138,7 @@ export default function ResultClient() {
         <button
           onClick={handlePdf}
           disabled={pdfLoading}
-          className="w-full bg-black text-white py-3 rounded-lg"
+          className={`w-full text-white py-3 rounded-lg ${pdfLoading ? 'bg-gray-700' : 'bg-black'}`}
         >
           {pdfLoading ? 'PDF wird erstellt…' : 'Analyse als PDF speichern'}
         </button>
