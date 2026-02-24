@@ -1,204 +1,181 @@
 // lib/riskLogic.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Regelbasierte Risikobewertung – Score 0–10 → Niedrig / Erhöht / Hoch
-// 3–7 Hinweise · 5–8 Verhandlungsfragen
-// ─────────────────────────────────────────────────────────────────────────────
+// Regelbasierte Risikobewertung – Score 0–100
 
 export type RiskLevel = 'Niedrig' | 'Erhöht' | 'Hoch';
 
 export interface FormData {
-  advertLink:         string;
-  brand:              string;
-  model:              string;
-  year:               string;
-  price:              string;
-  mileage:            string;
-  sellerType:         'privat' | 'haendler' | '';
-  firstRegistration:  'de' | 'eu' | 'non-eu' | 'unklar' | '';
-  serviceHistory:     'ja' | 'nein' | 'unklar' | '';
-  lastServiceEntry:   string;
-  lastServiceWork:    string;
-  accidentFree:       'ja' | 'nein' | 'unklar' | '';
+  advertLink: string;
+  brand: string;
+  model: string;
+  year: string;
+  price: string;
+  mileage: string;
+  sellerType: 'privat' | 'haendler' | '';
+  firstRegistration: 'de' | 'eu' | 'non-eu' | 'unklar' | '';
+  serviceHistory: 'ja' | 'nein' | 'unklar' | '';
+  lastServiceEntry: string;
+  lastServiceWork: string;
+  accidentFree: 'ja' | 'nein' | 'unklar' | '';
   repaintsDocumented: 'ja' | 'nein' | 'unklar' | '';
-  huValidUntil:       string;
-  ownershipDuration:  '<3' | '3-12' | '1plus' | 'unklar' | '';
+  huValidUntil: string;
+  ownershipDuration: '<3' | '3-12' | '1plus' | 'unklar' | '';
 }
 
 export interface RiskResult {
-  score:     number;
-  level:     RiskLevel;
-  hints:     string[];
+  score: number;
+  level: RiskLevel;
+  hints: string[];
   questions: string[];
 }
 
-// ─── Basis-Fragen ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Basisfragen (immer)
+// ─────────────────────────────────────────────
 
 const BASE_QUESTIONS: string[] = [
- 'Können Sie mir die FIN bzw. VIN mitteilen?',
-'Wann wurde der letzte größere Service durchgeführt?',
-'Wurde der Zahnriemen oder – falls vorhanden – die Steuerkette geprüft bzw. erneuert?',
-'Ist das Fahrzeug unfallfrei?',
-'Welche gesetzliche Gewährleistung oder Händlergarantie wird gewährt?',
+  'Können Sie mir die FIN bzw. VIN mitteilen?',
+  'Wann wurde der letzte größere Service durchgeführt?',
+  'Wurde der Zahnriemen oder – falls vorhanden – die Steuerkette geprüft bzw. erneuert?',
+  'Ist das Fahrzeug unfallfrei?',
 ];
 
-// ─── Hauptfunktion ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Hauptfunktion
+// ─────────────────────────────────────────────
 
 export function calculateRisk(data: FormData): RiskResult {
   let score = 0;
   const hints: string[] = [];
   const questions: string[] = [...BASE_QUESTIONS];
 
-  // Besitzdauer (nur Privat)
+  // Händler-Gewährleistung nur bei Händler
+  if (data.sellerType === 'haendler') {
+    questions.push(
+      'Welche gesetzliche Gewährleistung oder Händlergarantie wird gewährt?'
+    );
+  }
+
+  // Besitzdauer (Privat)
   if (data.sellerType === 'privat') {
     if (data.ownershipDuration === '<3') {
-      score += 2;
-      hints.push(
-        'Sehr kurze Besitzdauer (< 3 Monate): mögliches Weiterverkaufsrisiko.'
-      );
+      score += 10;
+      hints.push('Sehr kurze Besitzdauer – mögliches Weiterverkaufsrisiko.');
       questions.push('Warum wird das Fahrzeug nach so kurzer Besitzdauer verkauft?');
-    } else if (data.ownershipDuration === 'unklar') {
-      score += 1;
+    }
+    if (data.ownershipDuration === 'unklar') {
+      score += 5;
       hints.push('Besitzdauer unklar – bitte nachfragen.');
       questions.push('Wie lange besitzen Sie das Fahrzeug bereits?');
     }
   }
 
-  // Unfallstatus
+  // Unfall
   if (data.accidentFree === 'nein') {
-    score += 2;
+    score += 20;
     hints.push('Unfall bekannt – Reparaturnachweise und Gutachten prüfen.');
-    questions.push(
-      'Welche Teile wurden instand gesetzt und liegt ein Gutachten vor?'
-    );
+    questions.push('Welche Teile wurden instand gesetzt und liegt ein Gutachten vor?');
+  }
 
-  // Servicehistorie
+  if (data.accidentFree === 'unklar') {
+    score += 8;
+    hints.push('Unfallfreiheit nicht eindeutig – Lackprüfung empfohlen.');
+  }
+
+  // Service
   if (data.serviceHistory === 'nein') {
-    score += 2;
-    hints.push('Kein Scheckheft – Wartungshistorie nicht nachvollziehbar.');
-    questions.push(
-      'Gibt es Rechnungen oder andere Wartungsnachweise?'
-    );
-  } else if (data.serviceHistory === 'unklar') {
-    score += 1;
+    score += 15;
+    hints.push('Keine Servicehistorie – Wartung nicht nachvollziehbar.');
+    questions.push('Gibt es Rechnungen oder Wartungsnachweise?');
+  }
+
+  if (data.serviceHistory === 'unklar') {
+    score += 8;
     hints.push('Servicehistorie unklar – bitte prüfen.');
   }
 
-  // HU / TÜV
+  // HU
   const huDate = parseHuDate(data.huValidUntil);
   if (!huDate) {
-    score += 1;
+    score += 5;
     hints.push('HU-Datum unklar – Ablaufdatum prüfen.');
     questions.push('Wann läuft die aktuelle Hauptuntersuchung ab?');
   } else {
     const mLeft = monthsUntil(huDate);
     if (mLeft <= 0) {
-      score += 2;
-      hints.push(
-        `HU abgelaufen (${fmtDate(huDate)}) – neue HU erforderlich.`
-      );
-      questions.push(
-        'Wann wird die HU erneuert und wer trägt die Kosten?'
-      );
+      score += 20;
+      hints.push(`HU abgelaufen (${fmtDate(huDate)}) – neue HU erforderlich.`);
+      questions.push('Wann wird die HU erneuert und wer trägt die Kosten?');
     } else if (mLeft <= 3) {
-      score += 1;
-      hints.push(
-        `HU läuft bald ab (${fmtDate(huDate)}).`
-      );
+      score += 8;
+      hints.push(`HU läuft bald ab (${fmtDate(huDate)}).`);
     }
   }
 
-  // Erstauslieferung
+  // Import
   if (data.firstRegistration === 'non-eu') {
-    score += 2;
+    score += 20;
     hints.push('Nicht-EU-Import – erhöhte Prüfpflicht.');
-    questions.push(
-      'Liegt vollständige Importdokumentation vor?'
-    );
-  } else if (data.firstRegistration === 'eu') {
-    score += 1;
-    hints.push('EU-Reimport – Serviceunterlagen prüfen.');
-  } else if (data.firstRegistration === 'unklar') {
-    score += 1;
+    questions.push('Liegt vollständige Importdokumentation vor?');
+  }
+
+  if (data.firstRegistration === 'unklar') {
+    score += 5;
     hints.push('Erstauslieferungsland unklar.');
   }
 
-  // Nachlackierungen
+  // Nachlackierung
   if (data.repaintsDocumented === 'nein') {
-    score += 1;
-    hints.push('Nachlackierungen nicht dokumentiert – prüfen.');
-  } else if (data.repaintsDocumented === 'unklar') {
-    score += 1;
+    score += 5;
+    hints.push('Nachlackierungen nicht dokumentiert.');
+  }
+
+  if (data.repaintsDocumented === 'unklar') {
+    score += 5;
     hints.push('Nachlackierungsstatus unklar.');
   }
 
-  // Preis-Heuristik
+  // Preisbewertung
   const yr = parseInt(data.year, 10);
   const pr = parseNum(data.price);
   const km = parseNum(data.mileage);
 
   if (!isNaN(yr) && !isNaN(pr) && !isNaN(km)) {
     const age = new Date().getFullYear() - yr;
-    const minExpected = Math.max(1500, 18000 - age * 1200 - km * 0.04);
-    if (pr < minExpected * 0.68) {
-      score += 1;
-      hints.push(
-        `Preis auffällig niedrig (${pr.toLocaleString('de-DE')} €).`
-      );
-      questions.push(
-        'Warum liegt der Preis deutlich unter dem Marktniveau?'
-      );
+    const minExpected = Math.max(2000, 20000 - age * 1500 - km * 0.05);
+    if (pr < minExpected * 0.7) {
+      score += 15;
+      hints.push('Preis auffällig niedrig – mögliche versteckte Mängel.');
+      questions.push('Warum liegt der Preis deutlich unter dem Marktniveau?');
     }
   }
 
-  // Händler-spezifisch
+  // Score begrenzen
+  score = Math.min(score, 100);
 
-  // Score → Level
   const level: RiskLevel =
-    score <= 2 ? 'Niedrig' :
-    score <= 5 ? 'Erhöht'  :
+    score < 25 ? 'Niedrig' :
+    score < 60 ? 'Erhöht' :
     'Hoch';
 
-  // Mindest-Hinweise
-  const fallbackHints = [
-    'Dokumente vor Ort sorgfältig prüfen.',
-    'Unabhängige Werkstattprüfung empfohlen.',
-  ];
-
-  while (hints.length < 3 && fallbackHints.length > 0) {
-    hints.push(fallbackHints.shift()!);
-  }
-
-  // Mindest-Fragen
-  const fallbackQs = [
-    'Liegt eine vollständige Schadenshistorie vor?',
-    'Wurden alle Wartungsintervalle eingehalten?',
-    'Ist eine Probefahrt möglich?',
-  ];
-
-  while (questions.length < 5 && fallbackQs.length > 0) {
-    const q = fallbackQs.shift()!;
-    if (!questions.includes(q)) questions.push(q);
+  // Mindesthinweise
+  if (hints.length < 2) {
+    hints.push('Dokumente vor Ort sorgfältig prüfen.');
   }
 
   return {
-    score: Math.min(score, 10),
+    score,
     level,
-    hints: Array.from(new Set(hints)).slice(0, 7),
-    questions: Array.from(new Set(questions)).slice(0, 8),
+    hints: Array.from(new Set(hints)),
+    questions: Array.from(new Set(questions)),
   };
 }
 
-// ─── Hilfsfunktionen ──────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Helper
+// ─────────────────────────────────────────────
 
 function parseHuDate(val: string): Date | null {
   if (!val || /unklar/i.test(val)) return null;
-
-  const m1 = val.match(/^(\d{1,2})[./](\d{4})$/);
-  if (m1) return new Date(+m1[2], +m1[1] - 1, 1);
-
-  const m2 = val.match(/^(\d{4})-(\d{1,2})$/);
-  if (m2) return new Date(+m2[1], +m2[2] - 1, 1);
-
   const d = new Date(val);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -216,5 +193,5 @@ function fmtDate(d: Date): string {
 }
 
 function parseNum(s: string): number {
-  return parseFloat(s.replace(/[^\d.]/g, ''));
+  return parseFloat((s || '').replace(/[^\d.]/g, ''));
 }
