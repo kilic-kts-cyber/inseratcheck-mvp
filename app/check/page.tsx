@@ -7,7 +7,7 @@ import type { FormData } from '@/lib/riskLogic';
 
 const EMPTY: FormData = {
   advertLink: '',
-  advertText: '',   // ← NEU
+  advertText: '',
   brand: '',
   model: '',
   year: '',
@@ -70,9 +70,18 @@ export default function CheckPage() {
 
     setError('');
 
+    // ✅ Text sicher speichern (kein URL-Limit)
+    try {
+      localStorage.setItem('advertText', form.advertText || '');
+    } catch (_) {}
+
+    // ✅ URL klein halten (ohne advertText)
+    const copy: any = { ...form };
+    delete copy.advertText;
+
     const params = new URLSearchParams(
       Object.fromEntries(
-        Object.entries(form).filter(([, v]) => v !== undefined && v !== ''),
+        Object.entries(copy).filter(([, v]) => v !== undefined && v !== ''),
       ) as Record<string, string>,
     );
 
@@ -115,10 +124,9 @@ export default function CheckPage() {
             />
           </Field>
 
-          {/* 🔥 NEU: Inseratstext */}
           <Field
             label="Inseratstext (optional)"
-            hint="Hier können Sie die komplette Fahrzeugbeschreibung hineinkopieren. Das System erkennt automatisch auffällige Formulierungen wie „im Kundenauftrag“, „Export“, „Bastlerfahrzeug“ usw."
+            hint="Hier komplette Fahrzeugbeschreibung einfügen. Das System erkennt u. a. Motorprobleme, Export, Bastlerfahrzeug usw."
           >
             <textarea
               rows={6}
