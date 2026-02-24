@@ -11,7 +11,8 @@
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
-    "jspdf": "^2.5.1"
+    "jspdf": "^2.5.1",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
     "typescript": "^5",
