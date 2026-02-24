@@ -11,10 +11,7 @@ function generateAnalysisId(advertLink?: string): string {
     String(today.getDate()).padStart(2, '0');
 
   const match = advertLink?.match(/id=(\d+)/);
-  const mobileId = match
-    ? match[1]
-    : Math.random().toString(36).substring(2, 8).toUpperCase();
-
+  const mobileId = match ? match[1] : Math.random().toString(36).substring(2, 8).toUpperCase();
   return `IC-${dateStr}-${mobileId}`;
 }
 
@@ -34,7 +31,7 @@ export async function generatePDF(
 
   function rgb(hex: string): [number, number, number] {
     const h = hex.replace('#', '');
-    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
   }
 
   const tc = (hex: string) => doc.setTextColor(...rgb(hex));
@@ -62,16 +59,13 @@ export async function generatePDF(
     y += 5;
   }
 
-  function roundedBox(
-    bx: number, by: number, bw: number, bh: number,
-    fillHex: string, strokeHex: string,
-  ) {
+  function roundedBox(bx: number, by: number, bw: number, bh: number, fillHex: string, strokeHex: string) {
     fc(fillHex); dc(strokeHex);
     doc.setLineWidth(0.4);
     doc.roundedRect(bx, by, bw, bh, 2.5, 2.5, 'FD');
   }
 
-  // HEADER
+  // ── Header ────────────────────────────────────────────────
   fc('#174d37'); doc.rect(0, 0, PW, 32, 'F');
 
   doc.setFontSize(17); doc.setFont('helvetica', 'bold'); tc('#ffffff');
@@ -84,61 +78,58 @@ export async function generatePDF(
   doc.setFontSize(8); tc('#84ccab');
   doc.text(dateStr, PW - MR - doc.getTextWidth(dateStr), 20);
 
-  doc.setFontSize(8);
+  doc.setFontSize(8); tc('#84ccab');
   doc.text(`Analyse-ID: ${analysisId}`, ML, 26);
 
   y = 40;
 
-  // FAHRZEUGDATEN
+  // ── Fahrzeugdaten ─────────────────────────────────────────
   sectionHead('Fahrzeugdaten');
-
   const vehicle = [data.brand, data.model, data.year].filter(Boolean).join(' ');
   if (vehicle) {
-    doc.setFontSize(15); doc.setFont('helvetica','bold'); tc('#111827');
+    doc.setFontSize(15); doc.setFont('helvetica', 'bold'); tc('#111827');
     doc.text(vehicle, ML, y); y += 9;
   }
 
   const meta: string[] = [];
-  if (data.price)      meta.push(`Preis: ${parseFloat(data.price).toLocaleString('de-DE')} €`);
-  if (data.mileage)    meta.push(`KM-Stand: ${parseFloat(data.mileage).toLocaleString('de-DE')} km`);
+  if (data.price) meta.push(`Preis: ${parseFloat(data.price).toLocaleString('de-DE')} €`);
+  if (data.mileage) meta.push(`KM-Stand: ${parseFloat(data.mileage).toLocaleString('de-DE')} km`);
   if (data.sellerType) meta.push(`Verkäufer: ${data.sellerType === 'privat' ? 'Privat' : 'Händler'}`);
-  if (meta.length)  wrapped(meta.join('   ·   '), 9, '#6b7280');
+  if (meta.length) wrapped(meta.join('   ·   '), 9, '#6b7280');
   if (data.advertLink) wrapped(data.advertLink, 7.5, '#9ca3af');
-
   y += 4;
 
-  // RISIKOKLASSE
+  // ── Risikoklasse ──────────────────────────────────────────
   sectionHead('Risikoklasse');
 
   const [bgHex, bdHex, txHex] =
-    result.level === 'Niedrig' ? ['#f0fdf4','#bbf7d0','#166534'] :
-    result.level === 'Erhöht'  ? ['#fffbeb','#fde68a','#92400e'] :
-                                 ['#fef2f2','#fecaca','#991b1b'];
+    result.level === 'Niedrig' ? ['#f0fdf4', '#bbf7d0', '#166534'] :
+    result.level === 'Erhöht'  ? ['#fffbeb', '#fde68a', '#92400e'] :
+                                 ['#fef2f2', '#fecaca', '#991b1b'];
 
   roundedBox(ML, y, CW, 24, bgHex, bdHex);
 
-  doc.setFontSize(15); doc.setFont('helvetica','bold'); tc(txHex);
+  doc.setFontSize(15); doc.setFont('helvetica', 'bold'); tc(txHex);
   doc.text(result.level, ML + 6, y + 10);
 
-  doc.setFontSize(9); tc('#6b7280');
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal'); tc('#6b7280');
   doc.text(`Risikoscore: ${result.score} / 100`, ML + 6, y + 17);
 
-  // SCORE BAR (0–100)
+  // Score-Balken (0–100) + Farben
   const barX = ML + 52, barW = CW - 58;
   fc('#e5e7eb'); doc.rect(barX, y + 14, barW, 3, 'F');
 
   const barColor =
-    result.score < 25 ? '#16a34a' :
-    result.score < 50 ? '#84cc16' :
-    result.score < 75 ? '#d97706' :
-                        '#dc2626';
+    result.score < 30 ? '#16a34a' :   // grün
+    result.score < 50 ? '#d97706' :   // orange
+                        '#dc2626';    // rot
 
   fc(barColor);
   doc.rect(barX, y + 14, barW * Math.min(1, result.score / 100), 3, 'F');
 
   y += 32;
 
-  // HINWEISE
+  // ── Hinweise ──────────────────────────────────────────────
   sectionHead('Befunde & Hinweise');
   result.hints.forEach((hint, i) => {
     wrapped(`${i + 1}. ${hint}`, 9, '#374151');
@@ -147,7 +138,7 @@ export async function generatePDF(
 
   y += 2;
 
-  // FRAGEN
+  // ── Fragen ────────────────────────────────────────────────
   sectionHead('Ihre Verhandlungsfragen');
   result.questions.forEach((q) => {
     wrapped(`› „${q}"`, 9, '#374151');
@@ -156,7 +147,7 @@ export async function generatePDF(
 
   y += 6;
 
-  // FOOTER
+  // ── Footer ────────────────────────────────────────────────
   roundedBox(ML, y, CW, email ? 30 : 24, '#f9fafb', '#e5e7eb');
   y += 5;
 
