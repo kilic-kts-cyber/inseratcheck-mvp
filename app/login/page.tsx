@@ -1,83 +1,89 @@
-"use client";
+'use client'
 
-export const dynamic = "force-dynamic";
-
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
+  const router = useRouter()
+  const supabase = createClient()
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  async function handleLogin(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
 
-    try {
-      const { data, error: authError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-      console.log("LOGIN DATA:", data);
-      console.log("LOGIN ERROR:", authError);
-
-      if (authError) {
-        setError(authError.message);
-        return;
-      }
-
-      if (!data.session) {
-        setError("Keine Session erhalten.");
-        return;
-      }
-
-      router.push("/dashboard");
-    } catch (err) {
-      console.error("LOGIN CATCH ERROR:", err);
-      setError("Ein Fehler ist aufgetreten.");
-    } finally {
-      setLoading(false);
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
     }
+
+    router.refresh()
+    router.push('/dashboard')
   }
 
   return (
-    <main>
-      <h1>Login</h1>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="E-Mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-sm border border-gray-100">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Anmelden</h1>
 
-        <input
-          type="password"
-          placeholder="Passwort"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              E-Mail
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="name@beispiel.de"
+            />
+          </div>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Passwort
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="••••••••"
+            />
+          </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Wird eingeloggt..." : "Einloggen"}
-        </button>
-      </form>
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Anmelden...' : 'Anmelden'}
+          </button>
+        </form>
+      </div>
     </main>
-  );
+  )
 }
