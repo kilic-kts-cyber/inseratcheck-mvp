@@ -1,32 +1,6 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js'
 
-let client: SupabaseClient | null = null;
+const supabaseUrl = 'https://obnvtligqoygytfpxvtf.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 
-export function getSupabase(): SupabaseClient {
-  if (typeof window === "undefined") {
-    throw new Error(
-      "getSupabase() darf nur clientseitig aufgerufen werden."
-    );
-  }
-
-  if (client) return client;
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    throw new Error(
-      "Supabase Umgebungsvariablen fehlen."
-    );
-  }
-
-  client = createClient(url, key, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  });
-
-  return client;
-}
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
