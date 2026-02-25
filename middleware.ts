@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import type { CookieMethodsServer } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -14,18 +15,13 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          // Schritt 1: Cookies in den Request schreiben
+        setAll(cookiesToSet: Parameters<CookieMethodsServer['setAll']>[0]) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-
-          // Schritt 2: Neuen Response mit aktualisierten Cookies erstellen
           supabaseResponse = NextResponse.next({
             request,
           })
-
-          // Schritt 3: Cookies in die Response schreiben
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
