@@ -1,5 +1,5 @@
-export const revalidate = false;
 export const dynamic = 'force-dynamic';
+export const revalidate = false;
 
 export default function HomePage() {
   return (
@@ -8,8 +8,8 @@ export default function HomePage() {
         minHeight: '100vh',
         display: 'grid',
         placeItems: 'center',
-        background: '#f6f7f9',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif'
+        fontFamily: 'system-ui',
+        background: '#f6f7f9'
       }}
     >
       <div
@@ -21,23 +21,21 @@ export default function HomePage() {
           textAlign: 'center'
         }}
       >
-        <h1 style={{ marginBottom: 16 }}>InseratCheck</h1>
-        <p style={{ marginBottom: 24 }}>
-          System läuft.
-        </p>
+        <h1>Startseite funktioniert</h1>
 
         <a
           href="/login"
           style={{
+            display: 'inline-block',
+            marginTop: 20,
             padding: '10px 20px',
             background: '#2563eb',
             color: 'white',
             textDecoration: 'none',
-            borderRadius: 8,
-            fontWeight: 600
+            borderRadius: 8
           }}
         >
-          Zum Login
+          Login
         </a>
       </div>
     </main>
