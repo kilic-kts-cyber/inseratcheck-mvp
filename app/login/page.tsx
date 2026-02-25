@@ -1,56 +1,43 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
-  const router = useRouter();
+  const router = useRouter()
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
 
   async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
 
-    setLoading(true);
-    setMessage('');
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-    try {
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        router.push('/');
-        return;
-      }
-
-      setMessage(data.error || 'Login fehlgeschlagen');
-    } catch {
-      setMessage('Serverfehler');
+    if (error) {
+      setMessage(error.message)
+    } else {
+      router.push('/')
     }
 
-    setLoading(false);
+    setLoading(false)
   }
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        background: '#f6f7f9',
-        fontFamily: 'system-ui',
-      }}
-    >
+    <main style={{
+      minHeight: '100vh',
+      display: 'grid',
+      placeItems: 'center',
+      background: '#f6f7f9'
+    }}>
       <form
         onSubmit={handleLogin}
         style={{
@@ -58,7 +45,7 @@ export default function LoginPage() {
           background: '#ffffff',
           borderRadius: 12,
           boxShadow: '0 6px 22px rgba(0,0,0,0.06)',
-          width: 320,
+          width: 320
         }}
       >
         <h1 style={{ marginBottom: 20 }}>Login</h1>
@@ -68,11 +55,7 @@ export default function LoginPage() {
           placeholder="E-Mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{
-            width: '100%',
-            padding: 10,
-            marginBottom: 10,
-          }}
+          style={{ width: '100%', padding: 10, marginBottom: 10 }}
         />
 
         <input
@@ -80,11 +63,7 @@ export default function LoginPage() {
           placeholder="Passwort"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{
-            width: '100%',
-            padding: 10,
-            marginBottom: 10,
-          }}
+          style={{ width: '100%', padding: 10, marginBottom: 10 }}
         />
 
         <button
@@ -96,18 +75,18 @@ export default function LoginPage() {
             background: '#2563eb',
             color: 'white',
             border: 'none',
-            borderRadius: 8,
+            borderRadius: 8
           }}
         >
           {loading ? 'Wird geladen...' : 'Login'}
         </button>
 
         {message && (
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 10, color: 'red' }}>
             {message}
           </div>
         )}
       </form>
     </main>
-  );
+  )
 }
