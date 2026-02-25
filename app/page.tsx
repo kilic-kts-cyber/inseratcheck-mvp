@@ -1,83 +1,133 @@
-export default function HomePage() {
-  return (
-    <main style={{ fontFamily: "Arial, sans-serif", overflowX: "hidden" }}>
+"use client";
 
+import { useEffect } from "react";
+
+export default function HomePage() {
+  useEffect(() => {
+    const elements = document.querySelectorAll(".fade-in");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).style.opacity = "1";
+            (entry.target as HTMLElement).style.transform = "translateY(0px)";
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+  }, []);
+
+  return (
+    <main style={{ fontFamily: "Inter, Arial, sans-serif", overflowX: "hidden" }}>
+      
       {/* HERO */}
       <section
         style={{
           position: "relative",
           height: "100vh",
-          color: "white",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
+          color: "white",
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=2000')",
+            "url('https://images.unsplash.com/photo-1502877338535-766e1452684a?q=80&w=2000')",
           backgroundSize: "cover",
           backgroundPosition: "center",
+          backgroundAttachment: "fixed",
         }}
       >
-        {/* Dark Overlay */}
+        {/* Overlay */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background: "rgba(0,0,0,0.65)",
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.9) 100%)",
           }}
         />
 
-        <div style={{ position: "relative", maxWidth: 800, padding: 20 }}>
-          <h1 style={{ fontSize: 48, marginBottom: 20 }}>
+        {/* Red Glow */}
+        <div
+          style={{
+            position: "absolute",
+            width: 700,
+            height: 700,
+            background:
+              "radial-gradient(circle, rgba(255,0,0,0.3) 0%, transparent 70%)",
+            filter: "blur(120px)",
+          }}
+        />
+
+        <div style={{ position: "relative", maxWidth: 900, padding: 20 }}>
+          <h1 style={{ fontSize: 60, fontWeight: 800, marginBottom: 20 }}>
             Gebrauchtwagen prüfen wie ein Profi
           </h1>
 
-          <p style={{ fontSize: 20, marginBottom: 40, color: "#ddd" }}>
-            KI-Analyse. Risiko-Erkennung. Klare Verhandlungsargumente.
+          <p style={{ fontSize: 20, color: "#ccc", marginBottom: 40 }}>
+            KI-Analyse · Risiko-Erkennung · Technische Warnsignale ·
+            Verhandlungsargumente
           </p>
 
-          {/* Inserat-Link Feld */}
-          <input
-            type="text"
-            placeholder="Inserat-Link hier einfügen..."
-            style={{
-              width: "100%",
-              padding: 15,
-              fontSize: 16,
-              borderRadius: 6,
-              border: "none",
-              marginBottom: 15,
-            }}
-          />
+          <div style={{ maxWidth: 600, margin: "0 auto" }}>
+            <input
+              type="text"
+              placeholder="Inserat-Link hier einfügen..."
+              style={{
+                width: "100%",
+                padding: 18,
+                borderRadius: 10,
+                border: "none",
+                marginBottom: 15,
+                fontSize: 16,
+              }}
+            />
 
-          <button
-            style={{
-              width: "100%",
-              padding: 16,
-              backgroundColor: "#ff3b30",
-              color: "white",
-              border: "none",
-              borderRadius: 6,
-              fontWeight: 700,
-              fontSize: 16,
-              cursor: "pointer",
-              transition: "0.3s",
-            }}
-          >
-            Analyse starten
-          </button>
+            <button
+              style={{
+                width: "100%",
+                padding: 18,
+                backgroundColor: "#ff2d2d",
+                border: "none",
+                borderRadius: 10,
+                fontWeight: 700,
+                fontSize: 16,
+                color: "white",
+                cursor: "pointer",
+                boxShadow: "0 15px 40px rgba(255,0,0,0.5)",
+                transition: "0.3s",
+              }}
+            >
+              Analyse starten
+            </button>
+          </div>
+
+          <div style={{ marginTop: 25, color: "#aaa", fontSize: 14 }}>
+            ⚠ Motorschäden · 🛠 Wartungsrisiken · 💰 Preisfallen
+          </div>
         </div>
       </section>
 
-      {/* Vorteile */}
+      {/* FEATURES */}
       <section
         style={{
-          padding: "100px 40px",
-          background: "#f5f5f5",
+          background: "#0e0e0e",
+          color: "white",
+          padding: "120px 40px",
         }}
       >
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-          <h2 style={{ textAlign: "center", marginBottom: 60 }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <h2
+            style={{
+              textAlign: "center",
+              fontSize: 40,
+              marginBottom: 80,
+            }}
+            className="fade-in"
+          >
             Warum InseratCheck?
           </h2>
 
@@ -88,63 +138,80 @@ export default function HomePage() {
               gap: 40,
             }}
           >
-            <div
-              style={{
-                background: "white",
-                padding: 40,
-                borderRadius: 12,
-                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-                transition: "0.3s",
-              }}
-            >
-              <h3>⚠ Risiko-Erkennung</h3>
-              <p>
-                Fehlende Angaben, typische Problemformulierungen und versteckte
-                Hinweise werden erkannt.
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "white",
-                padding: 40,
-                borderRadius: 12,
-                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-              }}
-            >
-              <h3>🛠 Technische Hinweise</h3>
-              <p>
-                Hinweise auf Motorschäden, Unfallschäden oder Wartungsrisiken.
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "white",
-                padding: 40,
-                borderRadius: 12,
-                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-              }}
-            >
-              <h3>💰 Verhandlungsargumente</h3>
-              <p>
-                Konkrete Punkte für die Preisverhandlung – datenbasiert.
-              </p>
-            </div>
+            {[
+              {
+                title: "⚠ Risiko-Erkennung",
+                text: "Problemformulierungen, fehlende Angaben und versteckte Hinweise werden automatisch erkannt.",
+              },
+              {
+                title: "🧠 KI-Analyse",
+                text: "Datenlogik trifft Marktverständnis – strukturiert und objektiv bewertet.",
+              },
+              {
+                title: "💰 Verhandlungsstärke",
+                text: "Klare Argumente für Preisverhandlungen – sachlich und fundiert.",
+              },
+            ].map((item, index) => (
+              <div
+                key={index}
+                className="fade-in"
+                style={{
+                  background: "#1a1a1a",
+                  padding: 50,
+                  borderRadius: 20,
+                  border: "1px solid #222",
+                  transition: "0.4s",
+                  opacity: 0,
+                  transform: "translateY(40px)",
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget.style.transform = "translateY(-10px)"),
+                  (e.currentTarget.style.boxShadow =
+                    "0 25px 60px rgba(255,0,0,0.2)"))
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget.style.transform = "translateY(0px)"),
+                  (e.currentTarget.style.boxShadow = "none"))
+                }
+              >
+                <h3 style={{ marginBottom: 20 }}>{item.title}</h3>
+                <p style={{ color: "#bbb" }}>{item.text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* TRUST SECTION */}
+      <section
+        style={{
+          background: "#ffffff",
+          padding: "120px 40px",
+          textAlign: "center",
+        }}
+        className="fade-in"
+      >
+        <h2 style={{ fontSize: 36, marginBottom: 20 }}>
+          Sicher. Legal. Geprüft.
+        </h2>
+
+        <p style={{ maxWidth: 700, margin: "0 auto", color: "#555" }}>
+          InseratCheck kombiniert technische Analyse,
+          KI-Logik und reale Markterfahrung –
+          für mehr Transparenz beim Fahrzeugkauf.
+        </p>
+      </section>
+
+      {/* FOOTER */}
       <footer
         style={{
-          padding: 40,
-          textAlign: "center",
           background: "black",
           color: "white",
+          padding: 40,
+          textAlign: "center",
         }}
       >
-        © {new Date().getFullYear()} InseratCheck – Sicher. Legal. Geprüft.
+        © {new Date().getFullYear()} InseratCheck
       </footer>
     </main>
   );
