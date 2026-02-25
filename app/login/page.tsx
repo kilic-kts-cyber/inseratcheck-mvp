@@ -1,49 +1,42 @@
-"use client";
+'use client'
 
-export const dynamic = "force-dynamic";
-
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { getSupabase } from "@/lib/supabase";
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
+  const supabase = createClient()
+  const router = useRouter()
 
-  async function handleLogin(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-    try {
-      const supabase = getSupabase();
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
 
-      const { error: authError } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-      if (authError) {
-        setError(authError.message);
-        return;
-      }
-
-      router.push("/dashboard");
-    } catch (err) {
-      console.error(err);
-      setError("Ein Fehler ist aufgetreten.");
-    } finally {
-      setLoading(false);
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
     }
+
+    router.push('/dashboard')
+    router.refresh()
   }
 
   return (
     <main>
       <h1>Login</h1>
+
       <form onSubmit={handleLogin}>
         <input
           type="email"
@@ -61,12 +54,12 @@ export default function LoginPage() {
           required
         />
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
 
         <button type="submit" disabled={loading}>
-          {loading ? "Wird eingeloggt..." : "Einloggen"}
+          {loading ? 'Wird eingeloggt...' : 'Einloggen'}
         </button>
       </form>
     </main>
-  );
+  )
 }
