@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createMiddlewareClient } from '@/lib/supabase/middleware'
-
-function carryCookies(from: NextResponse, to: NextResponse) {
-  for (const c of from.cookies.getAll()) {
-    to.cookies.set(c)
-  }
-  return to
-}
+import { createMiddlewareSupabaseClient } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-  const response = NextResponse.next()
+  const { pathname } = request.nextUrl
+  const supabase = createMiddlewareSupabaseClient(request)
 
-  const supabase = createMiddlewareClient(request, response)
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
-    const redirect = NextResponse.redirect(new URL('/login', request.url))
-    return carryCookies(response, redirect)
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   const { data: profile } = await supabase
@@ -28,55 +20,54 @@ export async function middleware(request: NextRequest) {
     .single()
 
   if (!profile) {
-    const redirect = NextResponse.redirect(new URL('/login', request.url))
-    return carryCookies(response, redirect)
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   const { role, approved } = profile
 
-  if (pathname.startsWith('/dashboard')) {
-    if (role !== 'customer') {
-      return carryCookies(response, redirectByRole(role, approved, request))
-    }
-    return response
+  // Customer Bereich
+  if (pathname.startsWith('/dashboard') && role !== 'customer') {
+    return redirectByRole(role, approved, request)
   }
 
+  // Workshop Bereich
   if (pathname.startsWith('/workshop')) {
     if (role !== 'workshop') {
-      return carryCookies(response, redirectByRole(role, approved, request))
+      return redirectByRole(role, approved, request)
     }
 
-    if (pathname.startsWith('/workshop/dashboard') && !approved) {
-      const redirect = NextResponse.redirect(new URL('/workshop/pending', request.url))
-      return carryCookies(response, redirect)
+    if (!approved && pathname !== '/workshop/pending') {
+      return NextResponse.redirect(new URL('/workshop/pending', request.url))
     }
 
-    if (pathname.startsWith('/workshop/pending') && approved) {
-      const redirect = NextResponse.redirect(new URL('/workshop/dashboard', request.url))
-      return carryCookies(response, redirect)
+    if (approved && pathname === '/workshop/pending') {
+      return NextResponse.redirect(new URL('/workshop/dashboard', request.url))
     }
-
-    return response
   }
 
-  if (pathname.startsWith('/admin')) {
-    if (role !== 'admin') {
-      return carryCookies(response, redirectByRole(role, approved, request))
-    }
-    return response
+  // Admin Bereich
+  if (pathname.startsWith('/admin') && role !== 'admin') {
+    return redirectByRole(role, approved, request)
   }
 
-  return response
+  return NextResponse.next()
 }
 
-function redirectByRole(role: string, approved: boolean, request: NextRequest): NextResponse {
+function redirectByRole(
+  role: string,
+  approved: boolean,
+  request: NextRequest
+) {
   if (role === 'customer') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   if (role === 'workshop') {
     return NextResponse.redirect(
-      new URL(approved ? '/workshop/dashboard' : '/workshop/pending', request.url)
+      new URL(
+        approved ? '/workshop/dashboard' : '/workshop/pending',
+        request.url
+      )
     )
   }
 
