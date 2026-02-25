@@ -1,89 +1,142 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+export const dynamic = 'force-dynamic';
+export const revalidate = false;
+
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
+function withTimeout<T>(p: Promise<T>, ms: number) {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('Zeitüberschreitung beim Login (Timeout).')), ms);
+    p.then((v) => {
+      clearTimeout(t);
+      resolve(v);
+    }).catch((e) => {
+      clearTimeout(t);
+      reject(e);
+    });
+  });
+}
 
 export default function LoginPage() {
-  const router = useRouter()
-  const supabase = createClient()
+  const router = useRouter();
+  const supabase = useMemo(() => createClientComponentClient(), []);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErrorMsg(null);
+    setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { error } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        15000
+      );
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
+      if (error) {
+        setErrorMsg(error.message);
+        return;
+      }
+
+      router.replace('/');
+      router.refresh();
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? 'Unbekannter Fehler beim Login.');
+    } finally {
+      setLoading(false);
     }
-
-    router.refresh()
-    router.push('/dashboard')
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Anmelden</h1>
+    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
+      <form
+        onSubmit={onSubmit}
+        style={{
+          width: 360,
+          border: '1px solid #e5e7eb',
+          borderRadius: 12,
+          padding: 20,
+          background: '#fff',
+        }}
+      >
+        <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Anmelden</h1>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              E-Mail
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="name@beispiel.de"
-            />
-          </div>
+        <label style={{ display: 'block', fontSize: 12, marginBottom: 6 }}>E-Mail</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(v) => setEmail(v.target.value)}
+          placeholder="name@beispiel.de"
+          required
+          autoComplete="email"
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: '1px solid #d1d5db',
+            borderRadius: 8,
+            marginBottom: 12,
+          }}
+        />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Passwort
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
+        <label style={{ display: 'block', fontSize: 12, marginBottom: 6 }}>Passwort</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(v) => setPassword(v.target.value)}
+          placeholder="••••••••"
+          required
+          autoComplete="current-password"
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: '1px solid #d1d5db',
+            borderRadius: 8,
+            marginBottom: 12,
+          }}
+        />
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        {errorMsg ? (
+          <div
+            style={{
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              color: '#991B1B',
+              padding: 10,
+              borderRadius: 8,
+              marginBottom: 12,
+              fontSize: 13,
+              lineHeight: 1.3,
+            }}
           >
-            {loading ? 'Anmelden...' : 'Anmelden'}
-          </button>
-        </form>
-      </div>
+            {errorMsg}
+          </div>
+        ) : null}
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            borderRadius: 8,
+            border: 'none',
+            background: '#2563EB',
+            color: '#fff',
+            fontWeight: 700,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.7 : 1,
+          }}
+        >
+          {loading ? 'Anmelden…' : 'Anmelden'}
+        </button>
+      </form>
     </main>
-  )
+  );
 }
