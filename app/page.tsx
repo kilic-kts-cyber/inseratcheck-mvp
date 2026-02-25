@@ -1,172 +1,151 @@
 export default function HomePage() {
   return (
-    <main style={{ fontFamily: "Arial, sans-serif", lineHeight: 1.6 }}>
+    <main style={{ fontFamily: "Arial, sans-serif", overflowX: "hidden" }}>
 
-      {/* Navigation */}
-      <header style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "20px 40px",
-        borderBottom: "1px solid #eee"
-      }}>
-        <h2>InseratCheck</h2>
-        <a href="/login" style={{ textDecoration: "none", fontWeight: 600 }}>
-          Login
-        </a>
-      </header>
-
-      {/* Hero */}
-      <section style={{
-        padding: "80px 40px",
-        textAlign: "center",
-        maxWidth: 900,
-        margin: "0 auto"
-      }}>
-        <h1 style={{ fontSize: 40, marginBottom: 20 }}>
-          Gebrauchtwagen prüfen wie ein Profi
-        </h1>
-
-        <p style={{ fontSize: 18, color: "#555", marginBottom: 40 }}>
-          InseratCheck analysiert Fahrzeuganzeigen,
-          erkennt Risiken und gibt dir klare
-          Verhandlungsargumente.
-        </p>
-
-        <a
-          href="#analyse"
+      {/* HERO */}
+      <section
+        style={{
+          position: "relative",
+          height: "100vh",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=2000')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Dark Overlay */}
+        <div
           style={{
-            padding: "15px 30px",
-            backgroundColor: "black",
-            color: "white",
-            textDecoration: "none",
-            borderRadius: 6,
-            fontWeight: 600
+            position: "absolute",
+            inset: 0,
+            background: "rgba(0,0,0,0.65)",
           }}
-        >
-          Jetzt kostenlos prüfen
-        </a>
+        />
+
+        <div style={{ position: "relative", maxWidth: 800, padding: 20 }}>
+          <h1 style={{ fontSize: 48, marginBottom: 20 }}>
+            Gebrauchtwagen prüfen wie ein Profi
+          </h1>
+
+          <p style={{ fontSize: 20, marginBottom: 40, color: "#ddd" }}>
+            KI-Analyse. Risiko-Erkennung. Klare Verhandlungsargumente.
+          </p>
+
+          {/* Inserat-Link Feld */}
+          <input
+            type="text"
+            placeholder="Inserat-Link hier einfügen..."
+            style={{
+              width: "100%",
+              padding: 15,
+              fontSize: 16,
+              borderRadius: 6,
+              border: "none",
+              marginBottom: 15,
+            }}
+          />
+
+          <button
+            style={{
+              width: "100%",
+              padding: 16,
+              backgroundColor: "#ff3b30",
+              color: "white",
+              border: "none",
+              borderRadius: 6,
+              fontWeight: 700,
+              fontSize: 16,
+              cursor: "pointer",
+              transition: "0.3s",
+            }}
+          >
+            Analyse starten
+          </button>
+        </div>
       </section>
 
       {/* Vorteile */}
-      <section style={{
-        background: "#f8f8f8",
-        padding: "60px 40px"
-      }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-          <h2 style={{ textAlign: "center", marginBottom: 40 }}>
+      <section
+        style={{
+          padding: "100px 40px",
+          background: "#f5f5f5",
+        }}
+      >
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <h2 style={{ textAlign: "center", marginBottom: 60 }}>
             Warum InseratCheck?
           </h2>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: 30
-          }}>
-            <div>
-              <h3>Risiko-Erkennung</h3>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: 40,
+            }}
+          >
+            <div
+              style={{
+                background: "white",
+                padding: 40,
+                borderRadius: 12,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+                transition: "0.3s",
+              }}
+            >
+              <h3>⚠ Risiko-Erkennung</h3>
               <p>
-                Fehlende Angaben, typische Problemformulierungen
-                und versteckte Hinweise werden erkannt.
+                Fehlende Angaben, typische Problemformulierungen und versteckte
+                Hinweise werden erkannt.
               </p>
             </div>
 
-            <div>
-              <h3>Verhandlungsargumente</h3>
+            <div
+              style={{
+                background: "white",
+                padding: 40,
+                borderRadius: 12,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+              }}
+            >
+              <h3>🛠 Technische Hinweise</h3>
               <p>
-                Du bekommst konkrete Punkte für die Preisverhandlung.
+                Hinweise auf Motorschäden, Unfallschäden oder Wartungsrisiken.
               </p>
             </div>
 
-            <div>
-              <h3>Werkstatt-Option</h3>
+            <div
+              style={{
+                background: "white",
+                padding: 40,
+                borderRadius: 12,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+              }}
+            >
+              <h3>💰 Verhandlungsargumente</h3>
               <p>
-                Optional kannst du das Fahrzeug
-                professionell prüfen lassen.
+                Konkrete Punkte für die Preisverhandlung – datenbasiert.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Analyse-Bereich */}
-      <section
-        id="analyse"
+      {/* Footer */}
+      <footer
         style={{
-          padding: "80px 40px",
-          maxWidth: 800,
-          margin: "0 auto"
+          padding: 40,
+          textAlign: "center",
+          background: "black",
+          color: "white",
         }}
       >
-        <h2 style={{ textAlign: "center", marginBottom: 30 }}>
-          Inserat prüfen
-        </h2>
-
-        <textarea
-          placeholder="Inserattext hier einfügen..."
-          style={{
-            width: "100%",
-            height: 150,
-            padding: 15,
-            marginBottom: 20
-          }}
-        />
-
-        <input
-          type="text"
-          placeholder="Marke"
-          style={{ width: "100%", padding: 10, marginBottom: 15 }}
-        />
-
-        <input
-          type="text"
-          placeholder="Modell"
-          style={{ width: "100%", padding: 10, marginBottom: 15 }}
-        />
-
-        <input
-          type="text"
-          placeholder="Baujahr"
-          style={{ width: "100%", padding: 10, marginBottom: 15 }}
-        />
-
-        <input
-          type="text"
-          placeholder="Kilometerstand"
-          style={{ width: "100%", padding: 10, marginBottom: 15 }}
-        />
-
-        <input
-          type="text"
-          placeholder="Preis"
-          style={{ width: "100%", padding: 10, marginBottom: 20 }}
-        />
-
-        <button
-          style={{
-            width: "100%",
-            padding: 15,
-            backgroundColor: "black",
-            color: "white",
-            border: "none",
-            fontWeight: 600,
-            cursor: "pointer"
-          }}
-        >
-          Analyse starten
-        </button>
-      </section>
-
-      {/* Footer */}
-      <footer style={{
-        padding: 30,
-        textAlign: "center",
-        borderTop: "1px solid #eee",
-        color: "#777"
-      }}>
         © {new Date().getFullYear()} InseratCheck – Sicher. Legal. Geprüft.
       </footer>
-
     </main>
   );
 }
