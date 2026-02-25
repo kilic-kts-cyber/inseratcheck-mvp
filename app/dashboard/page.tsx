@@ -1,70 +1,28 @@
-"use client";
+'use client'
 
-export const dynamic = "force-dynamic";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { User } from "@supabase/supabase-js";
-import { getSupabase } from "@/lib/supabase";
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '../../lib/supabase'
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const router = useRouter();
+  const router = useRouter()
 
   useEffect(() => {
-    const supabase = getSupabase();
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession()
 
-    async function checkSession() {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (error || !session) {
-        router.push("/login");
-        return;
+      if (!data.session) {
+        router.push('/login')
       }
-
-      setUser(session.user);
-      setLoading(false);
     }
 
-    checkSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || !session) {
-        router.push("/login");
-      } else if (session) {
-        setUser(session.user);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router]);
-
-  if (loading) {
-    return <main><p>Wird geladen...</p></main>;
-  }
+    checkUser()
+  }, [router])
 
   return (
-    <main>
+    <main style={{ padding: 40 }}>
       <h1>Dashboard</h1>
-      <p>Eingeloggt als: {user?.email}</p>
-
-      <button
-        onClick={async () => {
-          const supabase = getSupabase();
-          await supabase.auth.signOut();
-          router.push("/login");
-        }}
-      >
-        Logout
-      </button>
+      <p>Du bist eingeloggt.</p>
     </main>
-  );
+  )
 }
