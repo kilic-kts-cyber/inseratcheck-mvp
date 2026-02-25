@@ -1,24 +1,24 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
 
-  if (!email || !password) {
-    return NextResponse.json(
-      { error: 'E-Mail und Passwort erforderlich' },
-      { status: 400 }
-    );
-  }
+  const body = await req.json();
 
-  // TEMPORÄRER Test-Login
-  // Hier später Supabase oder Datenbank einbauen
+  const email = body.email;
+  const password = body.password;
 
   if (email === 'test@test.de' && password === '123456') {
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true
+    });
   }
 
   return NextResponse.json(
-    { error: 'Ungültige Zugangsdaten' },
-    { status: 401 }
+    {
+      error: 'Falsche Zugangsdaten'
+    },
+    {
+      status: 401
+    }
   );
 }
